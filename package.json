@@ -1,0 +1,35 @@
+{
+  "name": "ai-math-board",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev --hostname 0.0.0.0",
+    "build": "next build",
+    "start": "next start --hostname 0.0.0.0",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "format": "prettier --write src tests docs next.config.ts playwright.config.ts vitest.config.ts package.json tsconfig.json .prettierrc.json README.md",
+    "format:check": "prettier --check src tests docs next.config.ts playwright.config.ts vitest.config.ts package.json tsconfig.json .prettierrc.json README.md"
+  },
+  "dependencies": {
+    "idb": "^8.0.3",
+    "katex": "^0.16.22",
+    "lucide-react": "^0.577.0",
+    "next": "^16.2.1",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "zustand": "^5.0.11"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.58.2",
+    "@types/katex": "^0.16.8",
+    "@types/node": "^24.12.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "prettier": "^3.9.9",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18"
+  }
+}
