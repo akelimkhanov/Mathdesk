@@ -1057,6 +1057,29 @@ select {
 .presentation-exit:hover {
   opacity: 1;
 }
+.browser-fullscreen {
+  font-size: 12px;
+  white-space: nowrap;
+}
+@media (max-width: 1100px) {
+  .presentation-exit > span,
+  .browser-fullscreen > span {
+    display: none;
+  }
+  .presentation-exit {
+    gap: 4px;
+    padding: 5px;
+  }
+  .browser-fullscreen {
+    padding: 7px;
+  }
+}
+@media (max-width: 480px) {
+  .presentation-exit {
+    flex-direction: column;
+    right: 8px;
+  }
+}
 /* Dialogs */
 .dialog-backdrop {
   position: fixed;
@@ -1377,5 +1400,309 @@ select {
   * {
     animation: none !important;
     transition: none !important;
+  }
+}
+
+/* Lesson tools: fewer permanent controls and larger targets. */
+.icon-button {
+  position: relative;
+  overflow: visible;
+}
+.button-tooltip {
+  display: none;
+  position: absolute;
+  top: calc(100% + 9px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--text);
+  color: var(--panel);
+  padding: 7px 10px;
+  border-radius: 7px;
+  font-size: 11px;
+  font-weight: 450;
+  line-height: 1.5;
+  white-space: nowrap;
+  box-shadow: var(--shadow);
+  pointer-events: none;
+  z-index: 30;
+}
+.icon-button:hover:not(:disabled) > .button-tooltip,
+.icon-button:focus-visible > .button-tooltip {
+  display: block;
+}
+.floating-toolbar {
+  left: 17px;
+  padding: 7px;
+  gap: 4px;
+}
+.floating-toolbar .icon-button {
+  width: 54px;
+  height: 48px;
+  flex-direction: column;
+  gap: 3px;
+}
+.floating-toolbar .button-tooltip {
+  left: calc(100% + 10px);
+  top: 50%;
+  transform: translateY(-50%);
+}
+.tool-caption {
+  font-size: 8px;
+  line-height: 1.2;
+  max-width: 52px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.tool-menu-toggle {
+  position: absolute;
+  right: -4px;
+  bottom: 0;
+  width: 17px;
+  height: 17px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 5px;
+  background: var(--panel);
+  color: var(--muted);
+  border: 1px solid var(--border);
+}
+.shape-popover {
+  left: 69px;
+  bottom: 0;
+  z-index: 7;
+}
+.drawing-context {
+  position: absolute;
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 12px;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  z-index: 4;
+  max-width: calc(100% - 185px);
+}
+.drawing-context .swatches {
+  gap: 6px;
+  margin: 0;
+}
+.brush-options {
+  display: flex;
+  gap: 1px;
+  padding-right: 10px;
+  border-right: 1px solid var(--border);
+}
+.brush-options .icon-button {
+  width: 31px;
+  height: 31px;
+}
+.context-width {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  white-space: nowrap;
+  font-size: 10px;
+  color: var(--muted);
+}
+.context-width input {
+  width: 70px;
+}
+.context-width output {
+  color: var(--text);
+  width: 18px;
+  text-align: right;
+}
+.context-more {
+  position: relative;
+  font-size: 10px;
+}
+.context-more summary {
+  cursor: pointer;
+  list-style: none;
+  color: var(--muted);
+  padding: 7px;
+  border-left: 1px solid var(--border);
+}
+.context-more summary::after {
+  content: ' ▾';
+}
+.context-options {
+  position: absolute;
+  top: calc(100% + 14px);
+  right: 0;
+  background: var(--panel);
+  padding: 15px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+  width: 190px;
+}
+.context-options label {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  font-size: 11px;
+}
+.context-options .button {
+  margin-top: 12px;
+  width: 100%;
+  font-size: 11px;
+}
+.object-fields summary {
+  font-size: 11px;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 3px 0 6px;
+}
+.selection-actions {
+  flex-wrap: wrap;
+  gap: 2px;
+}
+.recognition-hint {
+  position: absolute;
+  left: 50%;
+  bottom: 75px;
+  transform: translateX(-50%);
+  padding: 9px 15px;
+  font-size: 12px;
+  white-space: nowrap;
+  background: var(--accent-soft);
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 9px;
+  z-index: 5;
+  pointer-events: none;
+}
+.floating-toolbar.compact-toolbar {
+  flex-direction: row;
+  left: 50%;
+  top: auto;
+  bottom: 18px;
+  transform: translateX(-50%);
+  gap: 3px;
+  padding: 6px;
+}
+.compact-toolbar .icon-button {
+  width: 42px;
+  height: 42px;
+}
+.compact-toolbar .toolbar-divider {
+  width: 1px;
+  height: 27px;
+  margin: 7px;
+}
+.compact-toolbar .button-tooltip {
+  top: auto;
+  bottom: calc(100% + 11px);
+  left: 50%;
+  transform: translateX(-50%);
+}
+.presentation-exit {
+  opacity: 1;
+  z-index: 6;
+}
+.tool-lasso {
+  cursor: crosshair;
+}
+@media (max-height: 740px) {
+  .floating-toolbar .icon-button {
+    height: 42px;
+  }
+  .floating-toolbar {
+    gap: 2px;
+  }
+  .tool-caption {
+    font-size: 7px;
+  }
+}
+@media (max-height: 570px) {
+  .floating-toolbar .icon-button {
+    width: 42px;
+    height: 34px;
+    flex-direction: row;
+  }
+  .tool-caption {
+    display: none;
+  }
+}
+@media (max-width: 900px) {
+  .drawing-context {
+    gap: 8px;
+    max-width: calc(100% - 100px);
+  }
+  .context-width > span {
+    display: none;
+  }
+  .context-more summary {
+    font-size: 0;
+  }
+  .context-more summary::after {
+    font-size: 13px;
+  }
+  .context-width input {
+    width: 55px;
+  }
+  .brush-options {
+    padding-right: 6px;
+  }
+}
+@media (max-width: 700px) {
+  .floating-toolbar {
+    left: 7px;
+  }
+  .floating-toolbar .icon-button {
+    width: 45px;
+    height: 43px;
+  }
+  .tool-caption {
+    font-size: 7px;
+  }
+  .shape-popover {
+    left: 58px;
+    width: 195px;
+  }
+  .drawing-context {
+    left: auto;
+    right: 10px;
+    transform: none;
+    flex-wrap: wrap;
+    gap: 7px;
+    max-width: calc(100% - 80px);
+  }
+  .drawing-context .swatches {
+    gap: 3px;
+  }
+  .brush-options .icon-button {
+    width: 26px;
+  }
+  .minimal-context {
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    max-width: calc(100% - 20px);
+  }
+  .recognition-hint {
+    font-size: 10px;
+    max-width: 90%;
+    white-space: normal;
+    text-align: center;
+  }
+  .icon-button .button-tooltip {
+    white-space: normal;
+    min-width: 85px;
+    max-width: 170px;
+  }
+  .floating-toolbar.compact-toolbar {
+    bottom: 10px;
+  }
+  .presentation-exit span {
+    display: none;
   }
 }

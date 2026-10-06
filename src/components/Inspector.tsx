@@ -1,19 +1,13 @@
 'use client';
-import { Copy, Trash2, LockKeyhole, UnlockKeyhole, Pencil, X } from 'lucide-react';
+import { Copy, Trash2, LockKeyhole, UnlockKeyhole, Pencil, X, Group, Ungroup } from 'lucide-react';
 import { useEditor } from '@/store/editor';
 import { useSettings } from '@/i18n/context';
 import type { BoardObject, ObjectStyle } from '@/core/types';
 import type { TranslationKey } from '@/i18n/dictionaries';
 import { IconButton } from './Controls';
 import { resizeObject } from '@/core/geometry';
-export const colors: [string, TranslationKey][] = [
-  ['#303245', 'black'],
-  ['#7c5ce7', 'purple'],
-  ['#377adf', 'blue'],
-  ['#249d83', 'green'],
-  ['#dc5972', 'red'],
-  ['#e7a23d', 'orange'],
-];
+import DrawingContext, { colors } from './DrawingContext';
+import { isLocked } from '@/core/selection';
 export default function Inspector({ onEdit }: { onEdit: (o: BoardObject) => void }) {
   const { t } = useSettings();
   const s = useEditor();
@@ -30,19 +24,13 @@ export default function Inspector({ onEdit }: { onEdit: (o: BoardObject) => void
     'ellipse',
     'triangle',
   ].includes(s.tool);
-  if (!selected.length && !isDrawing) return null;
+  if (!selected.length) return isDrawing ? <DrawingContext /> : null;
   const style = selected[0]?.style ?? s.style;
   const changeStyle = (patch: Partial<ObjectStyle>) => {
-    s.setStyle(patch);
-    if (selected.length)
-      s.commit(
-        s.document!.objects.map((o) =>
-          s.selected.includes(o.id) && !o.locked ? { ...o, style: { ...o.style, ...patch } } : o,
-        ),
-      );
+    s.applyStyle(patch);
   };
   const single = selected.length === 1 ? selected[0] : null;
-  const locked = selected.length > 0 && selected.every((o) => o.locked);
+  const locked = selected.some((o) => isLocked(s.document!.objects, o));
   return (
     <aside className="inspector" aria-label={t('selection')}>
       <div className="inspector-header">
@@ -132,7 +120,8 @@ export default function Inspector({ onEdit }: { onEdit: (o: BoardObject) => void
         </>
       )}
       {single && (
-        <div className="object-fields">
+        <details className="object-fields">
+          <summary>{t('details')}</summary>
           <NumberField
             label={t('objectWidth')}
             value={single.width}
@@ -176,10 +165,32 @@ export default function Inspector({ onEdit }: { onEdit: (o: BoardObject) => void
               onChange={(fontSize) => s.updateSelected({ fontSize })}
             />
           )}
-        </div>
+        </details>
       )}
       {selected.length > 0 && (
         <div className="selection-actions">
+          {selected.length > 1 && (
+            <IconButton
+              label={t('group')}
+              disabled={
+                locked || selected.every((o) => o.groupId && o.groupId === selected[0].groupId)
+              }
+              onClick={s.groupSelection}
+              testId="group"
+            >
+              <Group size={17} />
+            </IconButton>
+          )}
+          {selected.some((o) => o.groupId) && (
+            <IconButton
+              label={t('ungroup')}
+              disabled={locked}
+              onClick={s.ungroupSelection}
+              testId="ungroup"
+            >
+              <Ungroup size={17} />
+            </IconButton>
+          )}
           {single && (single.type === 'text' || single.type === 'math') && (
             <IconButton
               label={t('edit')}

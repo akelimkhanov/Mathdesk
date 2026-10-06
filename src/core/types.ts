@@ -4,7 +4,7 @@ export type Camera = Point & { zoom: number };
 export type Rect = Point & { width: number; height: number };
 export type Brush = 'pen' | 'pencil' | 'marker';
 export type ShapeKind = 'line' | 'arrow' | 'rectangle' | 'ellipse' | 'triangle';
-export type Tool = 'select' | 'pan' | Brush | 'eraser' | 'text' | 'math' | ShapeKind;
+export type Tool = 'select' | 'lasso' | 'pan' | Brush | 'eraser' | 'text' | 'math' | ShapeKind;
 export type Background = 'dots' | 'grid' | 'plain' | 'ruled';
 export type SourceData = {
   strokes?: Sample[][];
@@ -17,6 +17,7 @@ export type BaseObject = Rect & {
   id: string;
   rotation: number;
   locked: boolean;
+  groupId?: string;
   style: ObjectStyle;
   source?: SourceData;
 };

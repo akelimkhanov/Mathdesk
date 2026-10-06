@@ -52,6 +52,7 @@ export function parseBoard(input: unknown): BoardDocument {
     )
       return fail();
     ids.add(o.id);
+    if (o.groupId !== undefined && (!string(o.groupId, 100) || !o.groupId)) return fail();
     if (o.type === 'stroke') {
       if (
         !['pen', 'pencil', 'marker'].includes(o.brush as string) ||

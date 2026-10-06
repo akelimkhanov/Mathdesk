@@ -9,6 +9,7 @@ import type {
   StrokeObject,
   ObjectStyle,
 } from './types';
+import { smoothInk } from './ink';
 
 export const MIN_ZOOM = 0.1;
 export const MAX_ZOOM = 5;
@@ -92,9 +93,10 @@ export function hitTest(p: Point, o: BoardObject, tolerance = 6): boolean {
     if (o.points.length === 1) return Math.hypot(q.x - o.points[0].x, q.y - o.points[0].y) <= pad;
     const sx = o.width / (strokeExtent(o.points).width || 1),
       sy = o.height / (strokeExtent(o.points).height || 1);
-    for (let i = 1; i < o.points.length; i++) {
-      const a = o.points[i - 1],
-        b = o.points[i];
+    const curve = smoothInk(o.points);
+    for (let i = 1; i < curve.length; i++) {
+      const a = curve[i - 1],
+        b = curve[i];
       if (distanceToSegment(q, { x: a.x * sx, y: a.y * sy }, { x: b.x * sx, y: b.y * sy }) <= pad)
         return true;
     }

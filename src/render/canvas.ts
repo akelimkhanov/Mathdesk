@@ -1,5 +1,6 @@
 import { bounds, intersects, strokeExtent } from '@/core/geometry';
 import type { BoardObject, Camera, Point, Rect } from '@/core/types';
+import { smoothInk } from '@/core/ink';
 export function prepareCanvas(
   canvas: HTMLCanvasElement,
   width: number,
@@ -33,34 +34,48 @@ export function renderObject(ctx: CanvasRenderingContext2D, o: BoardObject, dark
     if (o.brush === 'pencil') ctx.globalAlpha *= 0.7;
     const extent = strokeExtent(o.points);
     ctx.scale(o.width / extent.width, o.height / extent.height);
-    if (o.points.length === 1) {
+    const points = smoothInk(o.points);
+    ctx.fillStyle = ctx.strokeStyle;
+    if (points.length === 1) {
       ctx.beginPath();
-      ctx.fillStyle = ctx.strokeStyle;
       ctx.arc(
-        o.points[0].x,
-        o.points[0].y,
-        (o.style.width * (0.25 + o.points[0].pressure * 0.75)) / 2,
+        points[0].x,
+        points[0].y,
+        (o.style.width * (0.25 + points[0].pressure * 0.75)) / 2,
         0,
         Math.PI * 2,
       );
       ctx.fill();
-    }
-    // A highlighter is one continuous path so overlapping samples do not darken it.
-    else if (o.brush === 'marker') {
+    } else if (o.brush === 'marker') {
       ctx.beginPath();
-      ctx.moveTo(o.points[0].x, o.points[0].y);
-      for (const p of o.points.slice(1)) ctx.lineTo(p.x, p.y);
+      ctx.moveTo(points[0].x, points[0].y);
+      for (const p of points.slice(1)) ctx.lineTo(p.x, p.y);
       ctx.stroke();
     } else {
-      for (let i = 1; i < o.points.length; i++) {
-        const a = o.points[i - 1],
-          b = o.points[i];
-        ctx.lineWidth = o.style.width * (0.25 + ((a.pressure + b.pressure) / 2) * 0.75);
-        ctx.beginPath();
-        ctx.moveTo(a.x, a.y);
-        ctx.lineTo(b.x, b.y);
-        ctx.stroke();
+      // Fill one pressure-aware ribbon; translucent pencil segments never stack at joins.
+      const left: Point[] = [],
+        right: Point[] = [];
+      for (let i = 0; i < points.length; i++) {
+        const before = points[Math.max(0, i - 1)],
+          after = points[Math.min(points.length - 1, i + 1)];
+        const dx = after.x - before.x,
+          dy = after.y - before.y,
+          len = Math.hypot(dx, dy) || 1;
+        const radius = (o.style.width * (0.25 + points[i].pressure * 0.75)) / 2;
+        left.push({ x: points[i].x - (dy / len) * radius, y: points[i].y + (dx / len) * radius });
+        right.push({ x: points[i].x + (dy / len) * radius, y: points[i].y - (dx / len) * radius });
       }
+      ctx.beginPath();
+      ctx.moveTo(left[0].x, left[0].y);
+      for (const p of left.slice(1)) ctx.lineTo(p.x, p.y);
+      for (const p of right.reverse()) ctx.lineTo(p.x, p.y);
+      ctx.closePath();
+      for (const p of [points[0], points.at(-1)!]) {
+        const r = (o.style.width * (0.25 + p.pressure * 0.75)) / 2;
+        ctx.moveTo(p.x + r, p.y);
+        ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+      }
+      ctx.fill();
     }
   } else {
     ctx.beginPath();
@@ -123,8 +138,15 @@ export function renderSelection(
   ctx.strokeRect(rect.x, rect.y, rect.width, rect.height);
   if (single) {
     const s = 8 / zoom;
-    ctx.fillRect(rect.x + rect.width - s / 2, rect.y + rect.height - s / 2, s, s);
-    ctx.strokeRect(rect.x + rect.width - s / 2, rect.y + rect.height - s / 2, s, s);
+    for (const [x, y] of [
+      [rect.x, rect.y],
+      [rect.x + rect.width, rect.y],
+      [rect.x, rect.y + rect.height],
+      [rect.x + rect.width, rect.y + rect.height],
+    ]) {
+      ctx.fillRect(x - s / 2, y - s / 2, s, s);
+      ctx.strokeRect(x - s / 2, y - s / 2, s, s);
+    }
     ctx.beginPath();
     ctx.moveTo(rect.x + rect.width / 2, rect.y);
     ctx.lineTo(rect.x + rect.width / 2, rect.y - 24 / zoom);

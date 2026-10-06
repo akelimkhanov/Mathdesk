@@ -30,6 +30,9 @@ export function IconButton({
       data-testid={testId}
     >
       {children}
+      <span className="button-tooltip" role="tooltip">
+        {label}
+      </span>
     </button>
   );
 }

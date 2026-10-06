@@ -7,6 +7,7 @@ import type { BoardObject, Point } from '@/core/types';
 import { renderScene } from '@/render/canvas';
 import { useSettings } from '@/i18n/context';
 import { useBoardGestures } from './useBoardGestures';
+import type { CameraMotion } from '@/core/cameraMotion';
 import MathView from './MathView';
 
 export default function BoardCanvas({
@@ -15,25 +16,29 @@ export default function BoardCanvas({
   onSize,
   presentation = false,
   dialogOpen = false,
+  motion,
 }: {
   onInsert: (kind: 'text' | 'math', point: Point) => void;
   onEdit: (object: BoardObject) => void;
   onSize: (size: { width: number; height: number }) => void;
   presentation?: boolean;
   dialogOpen?: boolean;
+  motion: CameraMotion;
 }) {
   const surface = useRef<HTMLDivElement>(null),
     scene = useRef<HTMLCanvasElement>(null),
     overlay = useRef<HTMLCanvasElement>(null);
   const [size, setSize] = useState({ width: 1000, height: 700 });
   const { theme, t } = useSettings();
-  const { preview, pointerDown, pointerMove, pointerUp, pointerCancel } = useBoardGestures({
-    surface,
-    overlay,
-    size,
-    onInsert,
-    enabled: !dialogOpen && !presentation,
-  });
+  const { preview, pointerDown, pointerMove, pointerUp, pointerCancel, spaceHeld, recognized } =
+    useBoardGestures({
+      surface,
+      overlay,
+      size,
+      onInsert,
+      enabled: !dialogOpen,
+      motion,
+    });
   const doc = useEditor((s) => s.document),
     camera = useEditor((s) => s.camera),
     tool = useEditor((s) => s.tool);
@@ -68,7 +73,7 @@ export default function BoardCanvas({
   return (
     <div
       ref={surface}
-      className={`board-surface tool-${tool} background-${doc.background}`}
+      className={`board-surface tool-${spaceHeld ? 'pan' : tool} background-${doc.background}`}
       data-testid="board-canvas"
       role="application"
       aria-label={t('board')}
@@ -82,7 +87,7 @@ export default function BoardCanvas({
       onPointerUp={pointerUp}
       onPointerCancel={pointerCancel}
       onDoubleClick={(e) => {
-        if (dialogOpen || presentation) return;
+        if (dialogOpen) return;
         const r = surface.current!.getBoundingClientRect();
         const point = screenToWorld({ x: e.clientX - r.left, y: e.clientY - r.top }, camera);
         const o = [...objects]
@@ -97,6 +102,18 @@ export default function BoardCanvas({
       }}
       onContextMenu={(e) => e.preventDefault()}
     >
+      {recognized && (
+        <div className="recognition-hint" role="status" data-testid="hold-recognition">
+          {t(
+            recognized === 'line'
+              ? 'holdLine'
+              : recognized === 'ellipse'
+                ? 'holdCircle'
+                : 'holdRectangle',
+          )}{' '}
+          · {t('holdHint')}
+        </div>
+      )}
       <canvas ref={scene} className="scene-canvas" aria-hidden="true" />
       <div
         className="semantic-layer"

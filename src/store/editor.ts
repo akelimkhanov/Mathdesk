@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { applyCommand, makeCommand } from '@/core/history';
 import { createBoard, DEFAULT_STYLE } from '@/core/types';
 import type { BoardDocument, BoardObject, Camera, Command, ObjectStyle, Tool } from '@/core/types';
+import { cloneObjects, expandGroups, isLocked } from '@/core/selection';
 
 type EditorState = {
   document: BoardDocument | null;
@@ -26,6 +27,9 @@ type EditorState = {
   remove: () => void;
   duplicate: () => void;
   updateSelected: (patch: Partial<BoardObject>) => void;
+  applyStyle: (patch: Partial<ObjectStyle>) => void;
+  groupSelection: () => void;
+  ungroupSelection: () => void;
 };
 export const useEditor = create<EditorState>((set, get) => ({
   document: null,
@@ -94,18 +98,20 @@ export const useEditor = create<EditorState>((set, get) => ({
   setCamera: (camera) => set({ camera }),
   setTool: (tool) => set({ tool, selected: [] }),
   setStyle: (style) => set((s) => ({ style: { ...s.style, ...style } })),
-  select: (selected) => set({ selected }),
+  select: (selected) => set({ selected: expandGroups(get().document?.objects ?? [], selected) }),
   remove: () => {
     const s = get();
     if (s.document)
-      s.commit(s.document.objects.filter((o) => !s.selected.includes(o.id) || o.locked));
+      s.commit(
+        s.document.objects.filter(
+          (o) => !s.selected.includes(o.id) || isLocked(s.document!.objects, o),
+        ),
+      );
   },
   duplicate: () => {
     const s = get();
     if (!s.document) return;
-    const copies = s.document.objects
-      .filter((o) => s.selected.includes(o.id))
-      .map((o) => ({ ...o, id: crypto.randomUUID(), x: o.x + 24, y: o.y + 24, locked: false }));
+    const copies = cloneObjects(s.document.objects.filter((o) => s.selected.includes(o.id)));
     s.commit([...s.document.objects, ...copies]);
     set({ selected: copies.map((o) => o.id) });
   },
@@ -115,11 +121,49 @@ export const useEditor = create<EditorState>((set, get) => ({
       s.commit(
         s.document.objects.map((o) =>
           s.selected.includes(o.id) &&
-          (!o.locked || Object.keys(patch).every((k) => k === 'locked'))
+          (!isLocked(s.document!.objects, o) || Object.keys(patch).every((k) => k === 'locked'))
             ? ({ ...o, ...patch } as BoardObject)
             : o,
         ),
       );
+  },
+  applyStyle: (patch) => {
+    const s = get();
+    s.setStyle(patch);
+    if (!s.document) return;
+    s.commit(
+      s.document.objects.map((o) =>
+        s.selected.includes(o.id) &&
+        !isLocked(s.document!.objects, o) &&
+        Object.entries(patch).some(([key, value]) => o.style[key as keyof ObjectStyle] !== value)
+          ? { ...o, style: { ...o.style, ...patch } }
+          : o,
+      ),
+    );
+  },
+  groupSelection: () => {
+    const s = get();
+    if (!s.document || s.selected.length < 2) return;
+    const chosen = s.document.objects.filter((o) => s.selected.includes(o.id));
+    if (
+      chosen.some((o) => isLocked(s.document!.objects, o)) ||
+      chosen.every((o) => o.groupId && o.groupId === chosen[0].groupId)
+    )
+      return;
+    const groupId = crypto.randomUUID();
+    s.commit(s.document.objects.map((o) => (s.selected.includes(o.id) ? { ...o, groupId } : o)));
+  },
+  ungroupSelection: () => {
+    const s = get();
+    if (!s.document) return;
+    s.commit(
+      s.document.objects.map((o) => {
+        if (!s.selected.includes(o.id) || !o.groupId || isLocked(s.document!.objects, o)) return o;
+        const next = { ...o };
+        delete next.groupId;
+        return next;
+      }),
+    );
   },
 }));
 export { createBoard };

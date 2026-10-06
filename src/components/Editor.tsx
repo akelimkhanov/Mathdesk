@@ -8,6 +8,8 @@ import {
   HelpCircle,
   LoaderCircle,
   Maximize2,
+  Maximize,
+  Minimize,
   Minus,
   Plus,
   Settings2,
@@ -30,6 +32,11 @@ import Inspector from './Inspector';
 import ContentDialog, { type ContentRequest } from './ContentDialog';
 import { Dialog, IconButton } from './Controls';
 import { useAutosave } from './useAutosave';
+import { CameraMotion } from '@/core/cameraMotion';
+import { cloneObjects } from '@/core/selection';
+import { usePresentation } from './usePresentation';
+import { useBrowserFullscreen } from './useBrowserFullscreen';
+import DrawingContext from './DrawingContext';
 
 export default function Editor({ onExit }: { onExit: () => void }) {
   const { t, locale, setLocale, theme, toggleTheme } = useSettings();
@@ -38,7 +45,16 @@ export default function Editor({ onExit }: { onExit: () => void }) {
   const [size, setSize] = useState({ width: 1000, height: 700 });
   const [content, setContent] = useState<ContentRequest | null>(null);
   const [panel, setPanel] = useState<'settings' | 'help' | null>(null);
-  const [presentation, setPresentation] = useState(false);
+  const { presentation, enter: enterPresentation, exit: exitPresentation } = usePresentation();
+  const browserFullscreen = useBrowserFullscreen();
+  const [motion] = useState(
+    () =>
+      new CameraMotion(
+        () => useEditor.getState().camera,
+        (camera) => useEditor.getState().setCamera(camera),
+      ),
+  );
+  useEffect(() => () => motion.stop(), [motion]);
   const [toast, setToast] = useState('');
   const clipboard = useRef<BoardObject[]>([]);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -67,11 +83,11 @@ export default function Editor({ onExit }: { onExit: () => void }) {
       const state = useEditor.getState();
       if (!state.document) return;
       if (e.key === 'Escape') {
-        setPresentation(false);
+        if (browserFullscreen.handleEscape()) return;
+        exitPresentation();
         state.select([]);
         return;
       }
-      if (presentation) return;
       const mod = e.ctrlKey || e.metaKey,
         key = e.key.toLowerCase();
       if (mod && key === 'z') {
@@ -84,6 +100,10 @@ export default function Editor({ onExit }: { onExit: () => void }) {
       } else if (mod && key === 'd') {
         e.preventDefault();
         state.duplicate();
+      } else if (mod && key === 'g') {
+        e.preventDefault();
+        if (e.shiftKey) state.ungroupSelection();
+        else state.groupSelection();
       } else if (mod && key === 's') {
         e.preventDefault();
         void flush();
@@ -97,13 +117,7 @@ export default function Editor({ onExit }: { onExit: () => void }) {
       } else if (mod && key === 'v') {
         if (clipboard.current.length) {
           e.preventDefault();
-          const copies = clipboard.current.map((o) => ({
-            ...o,
-            id: crypto.randomUUID(),
-            x: o.x + 32,
-            y: o.y + 32,
-            locked: false,
-          }));
+          const copies = cloneObjects(clipboard.current, 32);
           state.commit([...state.document.objects, ...copies]);
           state.select(copies.map((o) => o.id));
           clipboard.current = copies;
@@ -113,19 +127,26 @@ export default function Editor({ onExit }: { onExit: () => void }) {
         state.remove();
       } else if (!mod && key === 'f') {
         e.preventDefault();
-        state.setCamera(fitCamera(state.document.objects, size));
+        motion.to(fitCamera(state.document.objects, size));
       } else if (!mod && !e.altKey) {
-        const keys: Record<string, Tool> = { v: 'select', p: 'pen', e: 'eraser', t: 'text' };
+        const keys: Record<string, Tool> = {
+          v: 'select',
+          p: 'pen',
+          e: 'eraser',
+          t: 'text',
+          m: 'math',
+          h: 'pan',
+        };
         if (keys[key]) state.setTool(keys[key]);
       }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [content, panel, size, presentation, flush]);
+  }, [content, panel, size, presentation, flush, browserFullscreen.handleEscape]);
   if (!s.document) return null;
   const doc = s.document;
   const hint: TranslationKey =
-    s.tool === 'select'
+    s.tool === 'select' || s.tool === 'lasso'
       ? 'selectionHint'
       : s.tool === 'pan'
         ? 'panHint'
@@ -140,9 +161,7 @@ export default function Editor({ onExit }: { onExit: () => void }) {
                 : 'shapeHint';
   const selected = doc.objects.filter((o) => s.selected.includes(o.id));
   function zoom(factor: number) {
-    s.setCamera(
-      zoomAt(s.camera, { x: size.width / 2, y: size.height / 2 }, s.camera.zoom * factor),
-    );
+    motion.zoom({ x: size.width / 2, y: size.height / 2 }, factor);
   }
   async function exit() {
     if (await flush()) onExit();
@@ -199,7 +218,7 @@ export default function Editor({ onExit }: { onExit: () => void }) {
               label={t('presentation')}
               onClick={() => {
                 s.select([]);
-                setPresentation(true);
+                enterPresentation();
               }}
             >
               <Presentation size={18} />
@@ -221,6 +240,7 @@ export default function Editor({ onExit }: { onExit: () => void }) {
           onEdit={onEdit}
           onSize={onSize}
           presentation={presentation}
+          motion={motion}
           dialogOpen={!!content || !!panel}
         />
         {!presentation && (
@@ -245,7 +265,7 @@ export default function Editor({ onExit }: { onExit: () => void }) {
                 title={t('resetZoom')}
                 aria-label={t('resetZoom')}
                 onClick={() =>
-                  s.setCamera(zoomAt(s.camera, { x: size.width / 2, y: size.height / 2 }, 1))
+                  motion.to(zoomAt(s.camera, { x: size.width / 2, y: size.height / 2 }, 1))
                 }
               >
                 {Math.round(s.camera.zoom * 100)}%
@@ -254,10 +274,7 @@ export default function Editor({ onExit }: { onExit: () => void }) {
                 <Plus size={16} />
               </IconButton>
               <span className="control-divider" />
-              <IconButton
-                label={t('fit')}
-                onClick={() => s.setCamera(fitCamera(doc.objects, size))}
-              >
+              <IconButton label={t('fit')} onClick={() => motion.to(fitCamera(doc.objects, size))}>
                 <Maximize2 size={16} />
               </IconButton>
               <span className="control-divider" />
@@ -285,12 +302,39 @@ export default function Editor({ onExit }: { onExit: () => void }) {
           </>
         )}
         {presentation && (
-          <div className="presentation-exit">
-            <span>{t('presentationHint')}</span>
-            <IconButton label={t('exitPresentation')} onClick={() => setPresentation(false)}>
-              <X size={18} />
-            </IconButton>
-          </div>
+          <>
+            <Toolbar compact />
+            {['pen', 'pencil', 'marker', 'eraser'].includes(s.tool) && <DrawingContext minimal />}
+            <div className="presentation-exit">
+              <span>
+                {t(browserFullscreen.fullscreen ? 'browserFullscreenHint' : 'presentationHint')}
+              </span>
+              {browserFullscreen.supported && (
+                <button
+                  className="button browser-fullscreen"
+                  data-testid="browser-fullscreen"
+                  aria-label={t(
+                    browserFullscreen.fullscreen ? 'exitBrowserFullscreen' : 'browserFullscreen',
+                  )}
+                  title={t(
+                    browserFullscreen.fullscreen ? 'exitBrowserFullscreen' : 'browserFullscreen',
+                  )}
+                  disabled={browserFullscreen.pending}
+                  onClick={() => void browserFullscreen.toggle()}
+                >
+                  {browserFullscreen.fullscreen ? <Minimize size={18} /> : <Maximize size={18} />}
+                  <span>
+                    {t(
+                      browserFullscreen.fullscreen ? 'exitBrowserFullscreen' : 'browserFullscreen',
+                    )}
+                  </span>
+                </button>
+              )}
+              <IconButton label={t('exitPresentation')} onClick={exitPresentation}>
+                <X size={18} />
+              </IconButton>
+            </div>
+          </>
         )}
       </main>
       {content && <ContentDialog request={content} onClose={() => setContent(null)} />}
@@ -348,6 +392,7 @@ export default function Editor({ onExit }: { onExit: () => void }) {
                 'shortcutRedo',
                 'shortcutTools',
                 'shortcutOther',
+                'selectionGestures',
               ] as const
             ).map((key) => (
               <p key={key}>{t(key)}</p>

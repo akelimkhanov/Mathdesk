@@ -41,7 +41,11 @@ test('draw, move, erase, undo/redo and reload preserve real stroke data', async 
   let doc = await savedDoc(page);
   expect(doc.objects).toHaveLength(1);
   expect(doc.objects[0].type).toBe('stroke');
-  if (doc.objects[0].type === 'stroke') expect(doc.objects[0].points.length).toBeGreaterThan(5);
+  if (doc.objects[0].type === 'stroke') {
+    expect(doc.objects[0].points.length).toBeGreaterThan(1);
+    expect(doc.objects[0].points.length).toBeLessThan(12);
+    expect(doc.objects[0].points.at(-1)!.x).toBeCloseTo(200);
+  }
   await page.getByTestId('tool-select').click();
   await drag(page, { x: 490, y: 397 }, { x: 640, y: 497 });
   doc = await savedDoc(page);
@@ -89,6 +93,7 @@ test('shapes can be resized, rotated, duplicated, selected together and deleted'
   await drag(page, { x: 380, y: 300 }, { x: 620, y: 450 });
   await page.getByTestId('tool-select').click();
   await page.mouse.click(490, 375);
+  await page.getByText('Параметры объекта', { exact: true }).click();
   await page.getByRole('spinbutton', { name: 'Ширина', exact: true }).fill('300');
   await page.getByRole('spinbutton', { name: 'Ширина', exact: true }).press('Enter');
   await page.getByRole('spinbutton', { name: 'Поворот', exact: true }).fill('45');
