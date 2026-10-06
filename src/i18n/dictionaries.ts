@@ -1,4 +1,23 @@
 export const ru = {
+  recognizeMath: 'Распознать как формулу',
+  recognitionDemoNotice:
+    'Демонстрационный режим без AI: варианты 2+2=5, 2+2=S и 2+2=8 заданы заранее и не зависят от рукописи. Данные никуда не отправляются. Проверьте или введите свой LaTeX.',
+  handwritingSource: 'Выделенная рукопись',
+  recognitionLoading: 'Подготовка и распознавание…',
+  recognitionVariants: 'Варианты распознавания',
+  recognitionVariant: 'Вариант',
+  recognitionUnknownConfidence: 'Confidence неизвестен',
+  recognitionNoCorrection:
+    'Выражение не вычисляется и не исправляется. LaTeX можно отредактировать вручную.',
+  recognitionLowConfidence:
+    'Низкий или неизвестный confidence. Проверьте формулу перед заменой рукописи.',
+  recognitionConfirm: 'Я проверил формулу и подтверждаю замену',
+  recognitionError: 'Распознавание не удалось. Рукопись сохранена. Повторите попытку или отмените.',
+  recognitionStale:
+    'Исходные штрихи изменились или заблокированы. Закройте окно и выделите их заново.',
+  recognitionTooLarge: 'Слишком большая рукопись. Выделите до 1000 штрихов и 200 000 точек.',
+  recognitionInsertBeside: 'Вставить рядом',
+  recognitionReplace: 'Заменить рукопись',
   lasso: 'Лассо',
   rectangleSelect: 'Выделение рамкой',
   group: 'Сгруппировать',
@@ -139,7 +158,7 @@ export const ru = {
   tools: 'Инструменты',
   board: 'Математическая доска',
   minimap: 'Обзор доски',
-  localOnly: 'Локальная версия · MVP 1',
+  localOnly: 'Локальная версия · MVP 2',
   presentation: 'Режим презентации',
   exitPresentation: 'Выйти из презентации',
   presentationHint: 'Esc — выйти из презентации',
@@ -156,7 +175,8 @@ export const ru = {
   green: 'Зелёный',
   red: 'Красный',
   orange: 'Оранжевый',
-  unavailable: 'Распознавание и 3D будут добавлены на следующих этапах.',
+  unavailable:
+    'Распознавание рукописи доступно в демо-режиме. Реальный AI, OCR, голос и 3D пока не подключены.',
   clearSelection: 'Снять выделение',
   renameHint: 'Название доски',
   storageWarning: 'Локальное хранение недоступно. Можно работать и скачивать JSON.',
@@ -165,6 +185,25 @@ export const ru = {
 export type TranslationKey = keyof typeof ru;
 type Dictionary = Record<TranslationKey, string>;
 export const en: Dictionary = {
+  recognizeMath: 'Recognize as formula',
+  recognitionDemoNotice:
+    'Demo mode without AI: 2+2=5, 2+2=S and 2+2=8 are fixed fixtures, unrelated to your handwriting. No data is sent anywhere. Review or enter your own LaTeX.',
+  handwritingSource: 'Selected handwriting',
+  recognitionLoading: 'Preparing and recognizing…',
+  recognitionVariants: 'Recognition alternatives',
+  recognitionVariant: 'Alternative',
+  recognitionUnknownConfidence: 'Unknown confidence',
+  recognitionNoCorrection:
+    'The expression is never solved or corrected. You can edit LaTeX manually.',
+  recognitionLowConfidence:
+    'Low or unknown confidence. Review the formula before replacing handwriting.',
+  recognitionConfirm: 'I reviewed the formula and confirm replacement',
+  recognitionError: 'Recognition failed. Handwriting is preserved. Retry or cancel.',
+  recognitionStale:
+    'Source strokes changed or are locked. Close this dialog and select them again.',
+  recognitionTooLarge: 'Handwriting is too large. Select up to 1000 strokes and 200,000 points.',
+  recognitionInsertBeside: 'Insert beside',
+  recognitionReplace: 'Replace handwriting',
   lasso: 'Lasso',
   rectangleSelect: 'Rectangle selection',
   group: 'Group',
@@ -304,7 +343,7 @@ export const en: Dictionary = {
   tools: 'Tools',
   board: 'Math board',
   minimap: 'Board overview',
-  localOnly: 'Local version · MVP 1',
+  localOnly: 'Local version · MVP 2',
   presentation: 'Presentation mode',
   exitPresentation: 'Exit presentation',
   presentationHint: 'Esc to exit presentation',
@@ -321,13 +360,32 @@ export const en: Dictionary = {
   green: 'Green',
   red: 'Red',
   orange: 'Orange',
-  unavailable: 'Recognition and 3D are planned for later stages.',
+  unavailable:
+    'Handwriting recognition has a demo flow. Live AI, OCR, voice and 3D are not connected yet.',
   clearSelection: 'Clear selection',
   renameHint: 'Board title',
   storageWarning: 'Local storage is unavailable. You can still work and download JSON.',
   smallScreen: 'A larger screen offers more room. All tools are available in the toolbar.',
 };
 export const kk: Dictionary = {
+  recognizeMath: 'Формула ретінде тану',
+  recognitionDemoNotice:
+    'AI жоқ демо режим: 2+2=5, 2+2=S және 2+2=8 алдын ала берілген, қолжазбаға тәуелді емес. Деректер ешқайда жіберілмейді. LaTeX-ті тексеріңіз немесе өзіңіз енгізіңіз.',
+  handwritingSource: 'Таңдалған қолжазба',
+  recognitionLoading: 'Дайындау және тану…',
+  recognitionVariants: 'Тану нұсқалары',
+  recognitionVariant: 'Нұсқа',
+  recognitionUnknownConfidence: 'Confidence белгісіз',
+  recognitionNoCorrection: 'Өрнек есептелмейді және түзетілмейді. LaTeX-ті қолмен өңдеуге болады.',
+  recognitionLowConfidence:
+    'Confidence төмен немесе белгісіз. Қолжазбаны ауыстырмас бұрын формуланы тексеріңіз.',
+  recognitionConfirm: 'Формуланы тексердім және ауыстыруды растаймын',
+  recognitionError: 'Тану сәтсіз. Қолжазба сақталды. Қайталаңыз немесе бас тартыңыз.',
+  recognitionStale:
+    'Бастапқы штрихтар өзгерген немесе бұғатталған. Терезені жауып, қайта таңдаңыз.',
+  recognitionTooLarge: 'Қолжазба тым үлкен. 1000 штрих пен 200 000 нүктеге дейін таңдаңыз.',
+  recognitionInsertBeside: 'Жанына қою',
+  recognitionReplace: 'Қолжазбаны ауыстыру',
   lasso: 'Лассо',
   rectangleSelect: 'Жақтаумен таңдау',
   group: 'Топтау',
@@ -467,7 +525,7 @@ export const kk: Dictionary = {
   tools: 'Құралдар',
   board: 'Математикалық тақта',
   minimap: 'Тақтаға шолу',
-  localOnly: 'Жергілікті нұсқа · MVP 1',
+  localOnly: 'Жергілікті нұсқа · MVP 2',
   presentation: 'Презентация режимі',
   exitPresentation: 'Презентациядан шығу',
   presentationHint: 'Esc — презентациядан шығу',
@@ -484,7 +542,7 @@ export const kk: Dictionary = {
   green: 'Жасыл',
   red: 'Қызыл',
   orange: 'Қызғылт сары',
-  unavailable: 'Тану және 3D кейінгі кезеңдерде қосылады.',
+  unavailable: 'Қолжазбаны танудың демо режимі бар. Нақты AI, OCR, дауыс пен 3D әлі қосылмаған.',
   clearSelection: 'Таңдауды алып тастау',
   renameHint: 'Тақта атауы',
   storageWarning: 'Жергілікті сақтау қолжетімсіз. Жұмыс жасап, JSON жүктей аласыз.',

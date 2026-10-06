@@ -37,6 +37,9 @@ import { cloneObjects } from '@/core/selection';
 import { usePresentation } from './usePresentation';
 import { useBrowserFullscreen } from './useBrowserFullscreen';
 import DrawingContext from './DrawingContext';
+import MathRecognitionDialog from './MathRecognitionDialog';
+import { captureHandwriting, type HandwritingSelection } from '@/core/handwritingMath';
+import { mathRecognitionProvider } from '@/services/mathRecognitionProvider';
 
 export default function Editor({ onExit }: { onExit: () => void }) {
   const { t, locale, setLocale, theme, toggleTheme } = useSettings();
@@ -44,6 +47,7 @@ export default function Editor({ onExit }: { onExit: () => void }) {
   const { status, flush } = useAutosave();
   const [size, setSize] = useState({ width: 1000, height: 700 });
   const [content, setContent] = useState<ContentRequest | null>(null);
+  const [recognition, setRecognition] = useState<HandwritingSelection | null>(null);
   const [panel, setPanel] = useState<'settings' | 'help' | null>(null);
   const { presentation, enter: enterPresentation, exit: exitPresentation } = usePresentation();
   const browserFullscreen = useBrowserFullscreen();
@@ -76,7 +80,7 @@ export default function Editor({ onExit }: { onExit: () => void }) {
     [],
   );
   useEffect(() => {
-    if (content || panel) return;
+    if (content || panel || recognition) return;
     const handler = (e: KeyboardEvent) => {
       if ((e.target as HTMLElement).closest('input,textarea,select,[contenteditable="true"]'))
         return;
@@ -142,7 +146,7 @@ export default function Editor({ onExit }: { onExit: () => void }) {
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [content, panel, size, presentation, flush, browserFullscreen.handleEscape]);
+  }, [content, panel, recognition, size, presentation, flush, browserFullscreen.handleEscape]);
   if (!s.document) return null;
   const doc = s.document;
   const hint: TranslationKey =
@@ -241,12 +245,27 @@ export default function Editor({ onExit }: { onExit: () => void }) {
           onSize={onSize}
           presentation={presentation}
           motion={motion}
-          dialogOpen={!!content || !!panel}
+          dialogOpen={!!content || !!panel || !!recognition}
         />
         {!presentation && (
           <>
             <Toolbar />
-            <Inspector onEdit={onEdit} />
+            <Inspector
+              onEdit={onEdit}
+              onRecognize={() => {
+                try {
+                  setRecognition(captureHandwriting(doc, s.selected));
+                } catch (error) {
+                  notify(
+                    t(
+                      error instanceof Error && error.message === 'HANDWRITING_TOO_LARGE'
+                        ? 'recognitionTooLarge'
+                        : 'recognitionError',
+                    ),
+                  );
+                }
+              }}
+            />
             <div className="bottom-status">
               <span className="status-dot" />
               {t(hint)}
@@ -338,6 +357,13 @@ export default function Editor({ onExit }: { onExit: () => void }) {
         )}
       </main>
       {content && <ContentDialog request={content} onClose={() => setContent(null)} />}
+      {recognition && (
+        <MathRecognitionDialog
+          selection={recognition}
+          provider={mathRecognitionProvider}
+          onClose={() => setRecognition(null)}
+        />
+      )}
       {panel === 'settings' && (
         <Dialog title={t('settings')} onClose={() => setPanel(null)}>
           <div className="settings-fields">

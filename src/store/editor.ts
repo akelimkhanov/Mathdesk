@@ -3,6 +3,13 @@ import { applyCommand, makeCommand } from '@/core/history';
 import { createBoard, DEFAULT_STYLE } from '@/core/types';
 import type { BoardDocument, BoardObject, Camera, Command, ObjectStyle, Tool } from '@/core/types';
 import { cloneObjects, expandGroups, isLocked } from '@/core/selection';
+import {
+  createRecognizedMath,
+  handwritingUnchanged,
+  type HandwritingSelection,
+} from '@/core/handwritingMath';
+import { mathHTML } from '@/core/math';
+import type { MathRecognitionCandidate } from '@/services/mathRecognition';
 
 type EditorState = {
   document: BoardDocument | null;
@@ -30,6 +37,13 @@ type EditorState = {
   applyStyle: (patch: Partial<ObjectStyle>) => void;
   groupSelection: () => void;
   ungroupSelection: () => void;
+  applyRecognition: (
+    selection: HandwritingSelection,
+    candidate: MathRecognitionCandidate,
+    provider: string,
+    placement: 'replace' | 'beside',
+    size: { width: number; height: number },
+  ) => boolean;
 };
 export const useEditor = create<EditorState>((set, get) => ({
   document: null,
@@ -164,6 +178,36 @@ export const useEditor = create<EditorState>((set, get) => ({
         return next;
       }),
     );
+  },
+  applyRecognition: (selection, candidate, provider, placement, size) => {
+    const s = get();
+    if (
+      !handwritingUnchanged(s.document, selection) ||
+      !candidate.latex.trim() ||
+      candidate.latex.length > 10000 ||
+      !mathHTML(candidate.latex).valid ||
+      !provider ||
+      provider.length > 200 ||
+      ![size.width, size.height].every(
+        (value) => Number.isFinite(value) && value > 0 && value <= 1e7,
+      ) ||
+      !(
+        candidate.confidence === null ||
+        (Number.isFinite(candidate.confidence) &&
+          candidate.confidence >= 0 &&
+          candidate.confidence <= 1)
+      )
+    )
+      return false;
+    const formula = createRecognizedMath(selection, candidate, provider, placement, size);
+    const ids = new Set(selection.strokes.map((o) => o.id));
+    s.commit([
+      ...s.document!.objects.filter((o) => placement !== 'replace' || !ids.has(o.id)),
+      formula,
+    ]);
+    s.setTool('select');
+    s.select([formula.id]);
+    return true;
   },
 }));
 export { createBoard };

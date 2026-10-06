@@ -126,6 +126,7 @@ export default function ContentDialog({
           <input
             id="font-size"
             type="number"
+            step="any"
             min="8"
             max="300"
             value={fontSize}

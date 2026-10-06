@@ -31,4 +31,5 @@ export type RecognitionMode = 'handwriting' | 'smart-ink' | 'auto-math';
 export function canAutoApply(mode: RecognitionMode, candidate: RecognitionCandidate): boolean {
   return mode === 'auto-math' && candidate.confidence >= 0.98;
 }
-// No mock provider is registered. MVP 1 never claims recognition is connected.
+// MVP 2's explicit handwriting pipeline uses the typed MathRecognitionProvider contract.
+// These broader contracts remain reserved for future features.

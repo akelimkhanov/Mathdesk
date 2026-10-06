@@ -1,5 +1,15 @@
 'use client';
-import { Copy, Trash2, LockKeyhole, UnlockKeyhole, Pencil, X, Group, Ungroup } from 'lucide-react';
+import {
+  Copy,
+  Trash2,
+  LockKeyhole,
+  UnlockKeyhole,
+  Pencil,
+  X,
+  Group,
+  Ungroup,
+  ScanLine,
+} from 'lucide-react';
 import { useEditor } from '@/store/editor';
 import { useSettings } from '@/i18n/context';
 import type { BoardObject, ObjectStyle } from '@/core/types';
@@ -8,7 +18,13 @@ import { IconButton } from './Controls';
 import { resizeObject } from '@/core/geometry';
 import DrawingContext, { colors } from './DrawingContext';
 import { isLocked } from '@/core/selection';
-export default function Inspector({ onEdit }: { onEdit: (o: BoardObject) => void }) {
+export default function Inspector({
+  onEdit,
+  onRecognize,
+}: {
+  onEdit: (o: BoardObject) => void;
+  onRecognize: () => void;
+}) {
   const { t } = useSettings();
   const s = useEditor();
   if (!s.document) return null;
@@ -43,6 +59,17 @@ export default function Inspector({ onEdit }: { onEdit: (o: BoardObject) => void
           </IconButton>
         )}
       </div>
+      {selected.some((o) => o.type === 'stroke') && (
+        <button
+          className="button recognition-trigger"
+          disabled={selected.some((o) => o.type === 'stroke' && isLocked(s.document!.objects, o))}
+          onClick={onRecognize}
+          data-testid="recognize-math"
+        >
+          <ScanLine size={17} />
+          {t('recognizeMath')}
+        </button>
+      )}
       {s.tool === 'eraser' && !selected.length ? (
         <p className="muted small">{t('eraserHint')}</p>
       ) : (

@@ -65,7 +65,7 @@ export default function Dashboard({
             <Sigma size={24} />
           </span>
           {t('app')}
-          <span className="brand-beta">MVP 1</span>
+          <span className="brand-beta">MVP 2</span>
         </a>
         <div className="header-actions">
           <LanguageSelect />
