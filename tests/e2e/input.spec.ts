@@ -21,6 +21,47 @@ async function documentData(page: Page): Promise<BoardDocument> {
     return value;
   });
 }
+async function livePixels(page: Page) {
+  return page.locator('.overlay-canvas').evaluate(async (el) => {
+    // Let any scheduled preview frame run without releasing the pointer.
+    await new Promise<void>((resolve) =>
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+    );
+    const canvas = el as HTMLCanvasElement;
+    const pixels = canvas.getContext('2d')!.getImageData(0, 0, canvas.width, canvas.height).data;
+    let painted = 0;
+    for (let i = 3; i < pixels.length; i += 4) if (pixels[i] > 0) painted++;
+    return painted;
+  });
+}
+test('mouse ink appears and grows before release, then clears on cancel', async ({ page }) => {
+  await board(page);
+  await page.mouse.move(300, 300);
+  await page.mouse.down();
+  await page.mouse.move(420, 335, { steps: 8 });
+  const first = await livePixels(page);
+  expect(first).toBeGreaterThan(100);
+  await page.mouse.move(540, 290, { steps: 8 });
+  expect(await livePixels(page)).toBeGreaterThan(first + 100);
+  await expect(page.getByTestId('undo')).toBeDisabled();
+  await page.keyboard.press('Escape');
+  expect(await livePixels(page)).toBe(0);
+  await page.mouse.up();
+  expect((await documentData(page)).objects).toHaveLength(0);
+});
+test('shape preview is visible during drag and is committed only on release', async ({ page }) => {
+  await board(page);
+  await page.getByTestId('tool-shapes').click();
+  await page.getByTestId('tool-rectangle').click();
+  await page.mouse.move(300, 300);
+  await page.mouse.down();
+  await page.mouse.move(500, 400, { steps: 8 });
+  expect(await livePixels(page)).toBeGreaterThan(500);
+  await expect(page.getByTestId('undo')).toBeDisabled();
+  await page.mouse.up();
+  expect(await livePixels(page)).toBe(0);
+  expect((await documentData(page)).objects).toHaveLength(1);
+});
 test('pen pressure is retained and canceled strokes never enter history', async ({ page }) => {
   await board(page);
   const cdp = await page.context().newCDPSession(page);
@@ -44,6 +85,7 @@ test('pen pressure is retained and canceled strokes never enter history', async 
       pointerType: 'pen',
       force: 0.2 + i * 0.05,
     });
+  expect(await livePixels(page)).toBeGreaterThan(100);
   await cdp.send('Input.dispatchMouseEvent', {
     type: 'mouseReleased',
     x: 530,

@@ -233,6 +233,8 @@ export function useBoardGestures({
       window.removeEventListener('blur', blur);
       clearHold();
       cancelAnimationFrame(frame.current);
+      // Effect setup runs again in Strict Mode; a canceled frame must not block new previews.
+      frame.current = 0;
     };
   }, [motion]);
   useEffect(() => {
